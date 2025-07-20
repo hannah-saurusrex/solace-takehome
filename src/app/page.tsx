@@ -74,7 +74,9 @@ export default function Home() {
           searchTerm={searchTerm}
         />
       ) : (
-        <p>No advocates found.</p>
+        <p className="text-center text-gray-500 italic mt-4">
+          No advocates match your search.
+        </p>
       )}
     </main>
   );

@@ -114,6 +114,15 @@ export function AdvocatesTable({ advocates, searchTerm }: Props) {
                 return (
                   <th
                     key={header.id}
+                    scope="col"
+                    role="columnheader"
+                    aria-sort={
+                      header.column.getIsSorted() === 'asc'
+                        ? 'ascending'
+                        : header.column.getIsSorted() === 'desc'
+                        ? 'descending'
+                        : 'none'
+                    }
                     onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
                     className={`px-4 py-2 border border-gray-300 text-left bg-[#285e50] hover:bg-[#1D4339] text-white ${
                       canSort ? 'cursor-pointer select-none' : ''
@@ -150,9 +159,15 @@ export function AdvocatesTable({ advocates, searchTerm }: Props) {
         {table.getRowModel().rows.map((row) => {
           const data = row.original;
           return (
-            <div key={row.id} className="border border-gray-300 rounded-lg p-4 shadow-sm bg-white">
-              <p><span className="font-semibold">First Name:</span> {highlightMatch(data.firstName, searchTerm)}</p>
-              <p><span className="font-semibold">Last Name:</span> {highlightMatch(data.lastName, searchTerm)}</p>
+            <div 
+              key={row.id} 
+              role="group"
+              aria-labelledby={`advocate-${row.id}`}
+              className="border border-gray-300 rounded-lg p-4 shadow-sm bg-white"
+            >
+              <p id={`advocate-${row.id}`} className="font-semibold text-lg mb-2">
+                Advocate: {highlightMatch(data.firstName, searchTerm)} {highlightMatch(data.lastName, searchTerm)}
+              </p>
               <p><span className="font-semibold">City:</span> {highlightMatch(data.city, searchTerm)}</p>
               <p><span className="font-semibold">Degree:</span> {highlightMatch(data.degree, searchTerm)}</p>
               <p><span className="font-semibold">Specialties:</span>
@@ -163,7 +178,7 @@ export function AdvocatesTable({ advocates, searchTerm }: Props) {
                 </ul>
               </p>
               <p><span className="font-semibold">Years of Exp.:</span> {highlightMatch(data.yearsOfExperience, searchTerm)}</p>
-              <p><span className="font-semibold">Phone:</span> {highlightMatch(data.phoneNumber, searchTerm)}</p>
+              <p><span className="font-semibold">Phone:</span> <a href={`tel:${data.phoneNumber}`}>{highlightMatch(data.phoneNumber, searchTerm)}</a></p>
             </div>
           );
         })}
