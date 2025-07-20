@@ -11,18 +11,15 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedTerm, setDebouncedTerm] = useState(searchTerm);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [pageSize] = useState(10);
 
   useEffect(() => {
     setLoading(true);
-    fetch("/api/advocates")
+    fetch(`/api/advocates?limit=${pageSize}&offset=${page * pageSize}`)
       .then((response) => {
         response.json()
       .then((jsonResponse) => {
-        jsonResponse.data.forEach((advocate: any) => {
-          console.log(
-            `ID: ${advocate.id} | ${advocate.firstName} ${advocate.lastName} | ${advocate.specialties.length} specialties`
-          );
-        });
         setAdvocates(jsonResponse.data);
         setFilteredAdvocates(jsonResponse.data);
         setLoading(false);
@@ -32,7 +29,7 @@ export default function Home() {
         setLoading(false);
       })
     });
-  }, []);
+  }, [page, pageSize]);
 
   //debounce effect
   useEffect(() => {
@@ -76,10 +73,27 @@ export default function Home() {
       {loading ? (
         <p>Loading advocates that match your search term</p>
       ) : filteredAdvocates.length > 0 ? (
-        <AdvocatesTable 
-          advocates={filteredAdvocates} 
-          searchTerm={searchTerm}
-        />
+        <>
+          <AdvocatesTable 
+            advocates={filteredAdvocates} 
+            searchTerm={searchTerm}
+          />
+          <div className="flex justify-center mt-6 gap-4">
+            <button
+              disabled={page === 0}
+              onClick={() => setPage((prev) => Math.max(prev - 1, 0))}
+              className="bg-gray-200 hover:bg-[#265b4e]/50 px-4 py-2 rounded-xl disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setPage((prev) => prev + 1)}
+              className="bg-[#265b4e] hover:bg-[#1D4339] text-white px-4 py-2 rounded-xl"
+            >
+              Next
+            </button>
+          </div>
+        </>
       ) : (
         <p>No advocates found.</p>
       )}
