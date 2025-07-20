@@ -14,8 +14,15 @@ export default function Home() {
 
   useEffect(() => {
     setLoading(true);
-    fetch("/api/advocates").then((response) => {
-      response.json().then((jsonResponse) => {
+    fetch("/api/advocates")
+      .then((response) => {
+        response.json()
+      .then((jsonResponse) => {
+        jsonResponse.data.forEach((advocate: any) => {
+          console.log(
+            `ID: ${advocate.id} | ${advocate.firstName} ${advocate.lastName} | ${advocate.specialties.length} specialties`
+          );
+        });
         setAdvocates(jsonResponse.data);
         setFilteredAdvocates(jsonResponse.data);
         setLoading(false);
