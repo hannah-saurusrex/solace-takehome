@@ -5,10 +5,11 @@ import {
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
+  getExpandedRowModel,
   useReactTable,
   SortingState,
 } from '@tanstack/react-table'
-import { useState } from 'react'
+import React, { useState } from 'react'
 
 export type Advocate = {
   firstName: string;
@@ -45,7 +46,8 @@ function highlightMatch(text: string | number, term: string) {
 }
 
 export function AdvocatesTable({ advocates, searchTerm }: Props) {
-  const [sorting, setSorting] = useState<SortingState>([])
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [expanded, setExpanded] = useState({});
 
   const columns: ColumnDef<Advocate>[] = [
     {
@@ -97,10 +99,16 @@ export function AdvocatesTable({ advocates, searchTerm }: Props) {
   const table = useReactTable({
     data: advocates,
     columns,
-    state: { sorting },
+    state: { 
+      sorting,
+      expanded, 
+  },
     onSortingChange: setSorting,
+    onExpandedChange: setExpanded,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
+    getRowCanExpand: () => true,
   })
 
   return (
@@ -143,13 +151,32 @@ export function AdvocatesTable({ advocates, searchTerm }: Props) {
         </thead>
         <tbody>
           {table.getRowModel().rows.map((row) => (
-            <tr key={row.id} className="border-t border-gray-200 hover:bg-[#285e50]/20">
-              {row.getVisibleCells().map((cell) => (
-                <td key={cell.id} className="px-4 py-2 border border-gray-300">
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
+            <React.Fragment key={row.id}>
+              <tr 
+                key={row.id} 
+                className="border-t border-gray-200 hover:bg-[#285e50]/20"
+                onClick={() => row.toggleExpanded()}
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <td key={cell.id} className="px-4 py-2 border border-gray-300">
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+
+              {row.getIsExpanded() && (
+                // opportunity for a separate component(s) here to show users additional relevant content.
+                <tr className="bg-white">
+                  <td colSpan={columns.length} className="p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="border p-4 rounded-md shadow text-center">More information here.</div>
+                      <div className="border p-4 rounded-md shadow text-center">More information here.</div>
+                      <div className="border p-4 rounded-md shadow text-center">More information here.</div>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </React.Fragment>
           ))}
         </tbody>
       </table>
