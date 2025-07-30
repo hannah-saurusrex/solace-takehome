@@ -19,25 +19,31 @@ export default function Home() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/advocates?limit=${pageSize}&offset=${page * pageSize}`)
+
+    // query string
+    const specialtyQuery = selectedSpecialties.map((s) => `specialty=${encodeURIComponent(s)}`).join('&')
+
+    const url = `/api/advocates?limit=${pageSize}&offset=${page * pageSize}${specialtyQuery ? `&${specialtyQuery}` : ''}`
+    
+    fetch(url)
       .then((response) => {
         response.json()
-      .then((jsonResponse) => {
-        setAdvocates(jsonResponse.data);
-        setFilteredAdvocates(jsonResponse.data);
-        setLoading(false);
-        const uniqueSpecialties = new Set<string>();
-          jsonResponse.data.forEach((advocate: any) => {
-            advocate.specialties.forEach((spec: string) => uniqueSpecialties.add(spec));
-          });
+        .then((jsonResponse) => {
+          setAdvocates(jsonResponse.data);
+          setFilteredAdvocates(jsonResponse.data);
+          setLoading(false);
+          const uniqueSpecialties = new Set<string>();
+            jsonResponse.data.forEach((advocate: any) => {
+              advocate.specialties.forEach((spec: string) => uniqueSpecialties.add(spec));
+            });
           setAllSpecialties(Array.from(uniqueSpecialties));
-      })
-      .catch((err) => {
-        console.error("error fetching advocates:", err);
-        setLoading(false);
-      })
-    });
-  }, [page, pageSize]);
+        })
+        .catch((err) => {
+          console.error("error fetching advocates:", err);
+          setLoading(false);
+        })
+      });
+  }, [page, pageSize, selectedSpecialties]);
 
   //debounce effect
   useEffect(() => {
