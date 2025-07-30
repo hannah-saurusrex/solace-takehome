@@ -3,29 +3,47 @@
 import { useEffect, useState } from "react";
 import { SearchBar } from "@/components/SearchBar";
 import { AdvocatesTable } from "@/components/AdvocatesTable";
+import { SpecialtyFilter } from "@/components/SpecialtyFilter";
 import type { Advocate } from "@/components/AdvocatesTable";
 
 export default function Home() {
   const [advocates, setAdvocates] = useState<Advocate[]>([]);
   const [filteredAdvocates, setFilteredAdvocates] = useState<Advocate[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([]);
+  const [allSpecialties, setAllSpecialties] = useState<string[]>([]);
   const [debouncedTerm, setDebouncedTerm] = useState(searchTerm);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [pageSize] = useState(10);
 
   useEffect(() => {
     setLoading(true);
-    fetch("/api/advocates").then((response) => {
-      response.json().then((jsonResponse) => {
-        setAdvocates(jsonResponse.data);
-        setFilteredAdvocates(jsonResponse.data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("error fetching advocates:", err);
-        setLoading(false);
-      })
-    });
-  }, []);
+
+    // query string
+    const specialtyQuery = selectedSpecialties.map((s) => `specialty=${encodeURIComponent(s)}`).join('&')
+
+    const url = `/api/advocates?limit=${pageSize}&offset=${page * pageSize}${specialtyQuery ? `&${specialtyQuery}` : ''}`
+    
+    fetch(url)
+      .then((response) => {
+        response.json()
+        .then((jsonResponse) => {
+          setAdvocates(jsonResponse.data);
+          setFilteredAdvocates(jsonResponse.data);
+          setLoading(false);
+          const uniqueSpecialties = new Set<string>();
+            jsonResponse.data.forEach((advocate: any) => {
+              advocate.specialties.forEach((spec: string) => uniqueSpecialties.add(spec));
+            });
+          setAllSpecialties(Array.from(uniqueSpecialties));
+        })
+        .catch((err) => {
+          console.error("error fetching advocates:", err);
+          setLoading(false);
+        })
+      });
+  }, [page, pageSize, selectedSpecialties]);
 
   //debounce effect
   useEffect(() => {
@@ -37,10 +55,10 @@ export default function Home() {
   }, [searchTerm])
 
   useEffect(() => {
-    const userInput = debouncedTerm.toLowerCase().trim()
+    const userInput = debouncedTerm.toLowerCase().trim();
   
     const filtered = advocates.filter((advocate) => {
-      return (
+      const matchesText =
         advocate.firstName.toLowerCase().includes(userInput) ||
         advocate.lastName.toLowerCase().includes(userInput) ||
         advocate.city.toLowerCase().includes(userInput) ||
@@ -49,17 +67,30 @@ export default function Home() {
           s.toLowerCase().includes(userInput)
         ) ||
         advocate.yearsOfExperience.toString().includes(userInput) ||
-        advocate.phoneNumber.toString().includes(userInput)
-      )
-    })
+        advocate.phoneNumber.toString().includes(userInput);
   
-    setFilteredAdvocates(filtered)
-  }, [debouncedTerm, advocates])
+      const matchesSpecialty =
+        selectedSpecialties.length === 0 ||
+        selectedSpecialties.some((spec) =>
+          advocate.specialties.includes(spec)
+        );
+  
+      return matchesText && matchesSpecialty;
+    });
+  
+    setFilteredAdvocates(filtered);
+  }, [debouncedTerm, advocates, selectedSpecialties]);
+  
 
   return (
     <main className="m-9">
       <h1 className="text-[#265b4e] font-bold text-2xl my-2">Find Solace Advocates</h1>
       <p className="text-lg py-4">Find an advocate who will help untangle your healthcare by phone or video—no matter what you need—covered by Medicare.</p>
+      <SpecialtyFilter
+        specialties={allSpecialties}
+        selectedSpecialties={selectedSpecialties}
+        onChange={setSelectedSpecialties}
+      />
       <SearchBar 
         searchTerm={searchTerm} 
         onChange={(e) => setSearchTerm(e.target.value)} 
@@ -69,10 +100,27 @@ export default function Home() {
       {loading ? (
         <p>Loading advocates that match your search term</p>
       ) : filteredAdvocates.length > 0 ? (
-        <AdvocatesTable 
-          advocates={filteredAdvocates} 
-          searchTerm={searchTerm}
-        />
+        <>
+          <AdvocatesTable 
+            advocates={filteredAdvocates} 
+            searchTerm={searchTerm}
+          />
+          <div className="flex justify-center mt-6 gap-4">
+            <button
+              disabled={page === 0}
+              onClick={() => setPage((prev) => Math.max(prev - 1, 0))}
+              className="bg-gray-200 hover:bg-[#265b4e]/50 px-4 py-2 rounded-xl disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setPage((prev) => prev + 1)}
+              className="bg-[#265b4e] hover:bg-[#1D4339] text-white px-4 py-2 rounded-xl"
+            >
+              Next
+            </button>
+          </div>
+        </>
       ) : (
         <p className="text-center text-gray-500 italic mt-4">
           No advocates match your search.
