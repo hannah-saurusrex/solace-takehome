@@ -98,6 +98,7 @@ export default function Home() {
           <AdvocatesTable 
             advocates={filteredAdvocates} 
             searchTerm={searchTerm}
+            selectedSpecialties={selectedSpecialties}
           />
           <div className="flex justify-center mt-6 gap-4">
             <button
