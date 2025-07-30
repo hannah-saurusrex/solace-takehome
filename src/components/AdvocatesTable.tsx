@@ -21,8 +21,9 @@ export type Advocate = {
 }
 
 type Props = {
-  advocates: Advocate[]
-  searchTerm: string
+  advocates: Advocate[];
+  searchTerm: string;
+  selectedSpecialties: string[];
 }
 
 function highlightMatch(text: string | number, term: string) {
@@ -44,7 +45,7 @@ function highlightMatch(text: string | number, term: string) {
   )
 }
 
-export function AdvocatesTable({ advocates, searchTerm }: Props) {
+export function AdvocatesTable({ advocates, searchTerm, selectedSpecialties }: Props) {
   const [sorting, setSorting] = useState<SortingState>([])
 
   const columns: ColumnDef<Advocate>[] = [
@@ -74,9 +75,19 @@ export function AdvocatesTable({ advocates, searchTerm }: Props) {
       enableSorting: false,
       cell: ({ row }) => (
         <ul>
-          {row.original.specialties.map((s, i) => (
-            <li key={i}>{highlightMatch(s, searchTerm)}</li>
-          ))}
+          {row.original.specialties.map((s, i) => {
+            const matchedFilter = selectedSpecialties.length
+              ? selectedSpecialties.find((filter) => 
+                s.toLowerCase().includes(filter.toLowerCase())
+              )
+              : null;
+
+            const highlightTerm = matchedFilter || searchTerm
+            
+            return (
+              <li key={i}>{highlightMatch(s, highlightTerm)}</li>
+            )
+          })}
         </ul>
       ),
     },
